@@ -1,0 +1,107 @@
+---
+version: 2.1
+
+executors:
+  linters:
+    docker:
+      - image: "python:3.10-alpine"
+        auth:
+          username: snyksecurity
+          password: $DOCKER_HUB_TOKEN
+  python310:
+    docker:
+      - image: "cimg/python:3.10"
+        auth:
+          username: snyksecurity
+          password: $DOCKER_HUB_TOKEN
+  python39:
+    docker:
+      - image: "cimg/python:3.9"
+        auth:
+          username: snyksecurity
+          password: $DOCKER_HUB_TOKEN
+  python38:
+    docker:
+      - image: "cimg/python:3.8"
+        auth:
+          username: snyksecurity
+          password: $DOCKER_HUB_TOKEN
+  python37:
+    docker:
+      - image: "cimg/python:3.7"
+        auth:
+          username: snyksecurity
+          password: $DOCKER_HUB_TOKEN
+
+jobs:
+  lint:
+    parameters:
+      executor_name:
+        type: executor
+    executor: << parameters.executor_name >>
+    steps:
+      - run:
+          name: Install requirements
+          command: |
+            apk update
+            apk add ruby ruby-etc git libstdc++ libgcc
+      - run:
+          name: Install pre-commit
+          command: pip install pre-commit==2.16.0
+      - checkout
+      - run:
+          name: Generate cache key
+          command: |
+            cp .pre-commit-config.yaml pre-commit-cache-key.txt
+            python --version --version >> pre-commit-cache-key.txt
+      - restore_cache:
+          key: pre-commit-hooks-{{ checksum "pre-commit-cache-key.txt" }}
+      - run:
+          name: Install hooks
+          command: pre-commit install --install-hooks
+      - save_cache:
+          paths:
+            - ~/.cache/pre-commit
+          key: pre-commit-hooks-{{ checksum "pre-commit-cache-key.txt" }}
+      - run:
+          name: Run linters
+          command: pre-commit run --all-files
+  test:
+    description: Run Tests for a specific python version
+    parameters:
+      executor_name:
+        type: executor
+    executor: << parameters.executor_name >>
+    working_directory: ~/project
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Install Poetry
+          command: poetry self update 1.1.12
+      - run:
+          name: Install dependencies and project in dev mode
+          command: poetry install
+      - run:
+          name: Run tests
+          command: poetry run pytest
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - lint:
+          name: Run Linters
+          executor_name: linters
+      - test:
+          name: Run Tests - python 3.10
+          executor_name: python310
+      - test:
+          name: Run Tests - python 3.9
+          executor_name: python39
+      - test:
+          name: Run Tests - python 3.8
+          executor_name: python38
+      - test:
+          name: Run Tests - python 3.7
+          executor_name: python37
