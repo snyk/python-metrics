@@ -44,7 +44,7 @@ jobs:
           name: Install requirements
           command: |
             apk update
-            apk add ruby ruby-etc git libstdc++ libgcc
+            apk add ruby ruby-etc git libstdc++ libgcc openssh-client
       - run:
           name: Install pre-commit
           command: pip install pre-commit==2.16.0
