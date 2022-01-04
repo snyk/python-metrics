@@ -6,31 +6,31 @@ executors:
     docker:
       - image: "python:3.10-alpine"
         auth:
-          username: snyksecurity
+          username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_TOKEN
   python310:
     docker:
       - image: "cimg/python:3.10"
         auth:
-          username: snyksecurity
+          username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_TOKEN
   python39:
     docker:
       - image: "cimg/python:3.9"
         auth:
-          username: snyksecurity
+          username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_TOKEN
   python38:
     docker:
       - image: "cimg/python:3.8"
         auth:
-          username: snyksecurity
+          username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_TOKEN
   python37:
     docker:
       - image: "cimg/python:3.7"
         auth:
-          username: snyksecurity
+          username: $DOCKER_HUB_USERNAME
           password: $DOCKER_HUB_TOKEN
 
 jobs:
@@ -93,15 +93,20 @@ workflows:
       - lint:
           name: Run Linters
           executor_name: linters
+          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.10
           executor_name: python310
+          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.9
           executor_name: python39
+          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.8
           executor_name: python38
+          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.7
           executor_name: python37
+          context: snyk-security-rnd
