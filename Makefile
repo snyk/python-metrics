@@ -3,3 +3,6 @@ test:
 
 lint:
 	poetry run pre-commit run
+
+install-hooks:
+	poetry run pre-commit install --install-hooks
