@@ -2,7 +2,7 @@
 name = "snyk-metrics"
 version = "0.0.1"
 description = "Python library to interact transparently with Prometheus, Pushgateway and Dogstatsd."
-authors = ["Luca Valentini <luca.valentini@snyk.io>"]
+authors = ["Snyk Security R&D <security-engineering@snyk.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -10,11 +10,11 @@ datadog = "^0.43.0"
 prometheus-client = "^0.12.0"
 
 [tool.poetry.dev-dependencies]
-black = "^21.12b0"
+black = "^22.1"
 flake8 = "^4.0.1"
 isort = "^5.10.1"
-mypy = "^0.930"
-pre-commit = "^2.16.0"
+mypy = "^0.931"
+pre-commit = "^2.17.0"
 pytest = "^6.2.5"
 pytest-cov = "^3.0.0"
 ipython = "^7.30.1"
