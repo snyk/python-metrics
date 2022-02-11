@@ -60,5 +60,5 @@ class TestCounter(TestCase):
         initialise(lock_registry=False)
         counter = Counter("foo", "foo", label_names=("label",))
         counter.increment(labels={"label": "test"})
-        len(counter._client.registry) == 1
+        assert len(counter._client.registry) == 1
         assert counter is counter._client.registry.get("foo")
