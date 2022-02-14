@@ -1,37 +1,26 @@
 ---
 version: 2.1
+parameters:
+  poetry-version:
+    type: string
+    default: "1.1.13"
 
 executors:
   linters:
     docker:
       - image: "python:3.10-alpine"
-        auth:
-          username: $DOCKER_HUB_USERNAME
-          password: $DOCKER_HUB_TOKEN
   python310:
     docker:
       - image: "cimg/python:3.10"
-        auth:
-          username: $DOCKER_HUB_USERNAME
-          password: $DOCKER_HUB_TOKEN
   python39:
     docker:
       - image: "cimg/python:3.9"
-        auth:
-          username: $DOCKER_HUB_USERNAME
-          password: $DOCKER_HUB_TOKEN
   python38:
     docker:
       - image: "cimg/python:3.8"
-        auth:
-          username: $DOCKER_HUB_USERNAME
-          password: $DOCKER_HUB_TOKEN
   python37:
     docker:
       - image: "cimg/python:3.7"
-        auth:
-          username: $DOCKER_HUB_USERNAME
-          password: $DOCKER_HUB_TOKEN
 
 jobs:
   lint:
@@ -44,10 +33,10 @@ jobs:
           name: Install requirements
           command: |
             apk update
-            apk add ruby ruby-etc git libstdc++ libgcc openssh-client
+            apk add ruby=3.0.3-r0 go=1.17.4-r0 git=2.34.1-r0
       - run:
           name: Install pre-commit
-          command: pip install pre-commit==2.16.0
+          command: pip install pre-commit==2.17.0
       - checkout
       - run:
           name: Generate cache key
@@ -78,13 +67,32 @@ jobs:
           path: ~/project
       - run:
           name: Install Poetry
-          command: poetry self update 1.1.12
+          command: poetry self update <<pipeline.parameters.poetry-version>>
       - run:
           name: Install dependencies and project in dev mode
           command: poetry install
       - run:
           name: Run tests
           command: poetry run pytest
+
+  build_and_release:
+    description: Build and release new version of the package to PyPi
+    executor: python310
+    working_directory: ~/project
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Install Poetry
+          command: poetry self update <<pipeline.parameters.poetry-version>>
+      - run:
+          name: Configure Poetry PyPi token
+          command: |
+            poetry config pypi-token.testpypi ${POETRY_PYPI_TOKEN_PYPI}
+      - run:
+          name: Release and Publish to PyPI
+          command: |
+            poetry publish --build --no-interaction
 
 workflows:
   version: 2
@@ -110,3 +118,14 @@ workflows:
           name: Run Tests - python 3.7
           executor_name: python37
           context: snyk-security-rnd
+      - build_and_release:
+          name: Build and Release a new version to PyPI
+          requires:
+            - Run Tests - python 3.10
+            - Run Tests - python 3.9
+            - Run Tests - python 3.8
+            - Run Tests - python 3.7
+            - Run Linters
+          filters:
+            branches:
+              only: main
