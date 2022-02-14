@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
 from snyk_metrics import get_client
 
@@ -10,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class Counter(Metric):
-    def __init__(self, name: str, documentation: str, label_names: Optional[tuple] = None):
+    def __init__(
+        self, name: str, documentation: str, label_names: Optional[Tuple[str, ...]] = None
+    ):
 
         super().__init__(
             metric_type=MetricTypes.COUNTER,
@@ -27,7 +29,7 @@ class Counter(Metric):
         except ClientNotInitialisedError:
             pass
 
-    def increment(self, value: int = 1, labels: Optional[dict] = None):
+    def increment(self, value: int = 1, labels: Optional[Dict[str, Any]] = None) -> None:
         if not self._client:
             self._client = get_client()
 

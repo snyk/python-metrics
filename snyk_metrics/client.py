@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
-from typing import Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from prometheus_client import REGISTRY, CollectorRegistry
 
@@ -32,13 +32,13 @@ class Metric:
     metric_type: MetricTypes
     name: str
     documentation: str
-    label_names: Optional[tuple]
+    label_names: Optional[Tuple[str, ...]]
 
 
 class Singleton(type):
-    _instances: dict = {}
+    _instances: Dict[Any, Any] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         else:
@@ -46,9 +46,9 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-def _exception_handler(func):
+def _exception_handler(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def inner_func(*args, **kwargs):
+    def inner_func(*args: Any, **kwargs: Any) -> Any:
         try:
             func(*args, **kwargs)
         except Exception as exc:
@@ -105,7 +105,7 @@ class MetricsClient(metaclass=Singleton):
 
     @_exception_handler
     def _validate_metric(
-        self, metric: Metric, metric_type: MetricTypes, labels: Optional[dict]
+        self, metric: Metric, metric_type: MetricTypes, labels: Optional[Dict[str, Any]]
     ) -> None:
         registered_metric = self.registry.get(metric.name)
         label_names = tuple(labels.keys()) if labels else None
@@ -145,7 +145,9 @@ class MetricsClient(metaclass=Singleton):
         return
 
     @_exception_handler
-    def increment_counter(self, metric: Metric, labels: dict = None, value: int = 1) -> None:
+    def increment_counter(
+        self, metric: Metric, labels: Optional[Dict[str, Any]] = None, value: int = 1
+    ) -> None:
         self._validate_metric(metric, MetricTypes.COUNTER, labels)
         for client in self._enabled_clients:
             client.increment_counter(metric.name, labels, value)
