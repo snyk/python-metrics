@@ -70,6 +70,8 @@ class MetricsClient(metaclass=Singleton):
         pushgateway_host: str = "prometheus-pushgateway",
         pushgateway_port: int = 9091,
         pushgateway_job_name: str = "snyk-metrics-client",
+        pushgateway_username: Optional[str] = None,
+        pushgateway_password: Optional[str] = None,
         dogstatsd_enabled: bool = False,
         dogstatsd_agent_host: str = "datadog",
         dogstatsd_port: int = 8125,
@@ -85,6 +87,8 @@ class MetricsClient(metaclass=Singleton):
                 pushgateway_host=pushgateway_host,
                 pushgateway_port=pushgateway_port,
                 pushgateway_job_name=pushgateway_job_name,
+                pushgateway_username=pushgateway_username,
+                pushgateway_password=pushgateway_password,
                 registry=prometheus_registry,
             )
             if prometheus_enabled
