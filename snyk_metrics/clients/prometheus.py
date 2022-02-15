@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from prometheus_client import (
     REGISTRY,
@@ -9,6 +9,8 @@ from prometheus_client import (
     Summary,
     push_to_gateway,
 )
+
+from snyk_metrics.exceptions import MetricNotRegisteredError
 
 from .base import BaseClient
 
@@ -26,10 +28,10 @@ class PrometheusClient(BaseClient):
     def __init__(
         self,
         pushgateway_enabled: bool = False,
-        pushgateway_host: str = None,
-        pushgateway_port: int = None,
-        pushgateway_job_name: str = None,
-        registry: CollectorRegistry = None,
+        pushgateway_host: Optional[str] = None,
+        pushgateway_port: Optional[int] = None,
+        pushgateway_job_name: Optional[str] = None,
+        registry: Optional[CollectorRegistry] = None,
     ):
         self.pushgateway_enabled = pushgateway_enabled
         self.pushgateway_host = pushgateway_host if pushgateway_enabled else None
@@ -38,19 +40,29 @@ class PrometheusClient(BaseClient):
         self._registry = registry or REGISTRY
 
     def _push_to_gateway(self) -> None:
-        return push_to_gateway(
+        push_to_gateway(
             f"{self.pushgateway_host}:{self.pushgateway_port}",
             self.pushgateway_job_name,
             self._registry,
         )
+        return None
 
-    def _get_registered_metric(self, metric_type: str, name: str, label_names: tuple = None):
+    def _get_registered_metric(
+        self, metric_type: str, name: str, label_names: Optional[Tuple[str, ...]] = None
+    ) -> PrometheusMetric:
         metric = self._registry._names_to_collectors.get(name)
+
         # TODO: add checks about type and labels
+        if metric is None:
+            raise MetricNotRegisteredError
         return metric
 
     def register_metric(
-        self, metric_type: str, name: str, documentation: str, label_names: tuple = None
+        self,
+        metric_type: str,
+        name: str,
+        documentation: str,
+        label_names: Optional[Tuple[str, ...]] = None,
     ) -> PrometheusMetric:
 
         metric = PROMETHEUS_METRIC_CLASS_MAP[metric_type](
@@ -64,10 +76,11 @@ class PrometheusClient(BaseClient):
 
         return metric
 
-    def increment_counter(self, name: str, labels: dict = None, value: int = 1) -> None:
-        counter = self._get_registered_metric(
-            "counter", name, tuple(labels.keys()) if labels else None
-        )
+    def increment_counter(
+        self, name: str, labels: Optional[Dict[str, Any]] = None, value: int = 1
+    ) -> None:
+        label_names: Optional[Tuple[str, ...]] = tuple(labels.keys()) if labels else None
+        counter = self._get_registered_metric("counter", name, label_names)
         counter.labels(**labels).inc(value) if labels else counter.inc(value)
 
         if self.pushgateway_enabled:

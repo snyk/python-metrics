@@ -30,7 +30,7 @@ def initialise(
     prometheus_registry: CollectorRegistry = REGISTRY,
     raise_exceptions: bool = True,
     lock_registry: bool = True,
-):
+) -> None:
     global _metrics_client
     if _metrics_client is not None:
         logger.warning("MetricsClient already initialised. Different settings will be ignored.")

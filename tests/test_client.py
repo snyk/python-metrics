@@ -15,17 +15,17 @@ from snyk_metrics.exceptions import (
 
 
 class TestMetricsClient(TestCase):
-    def tearDown(self):
+    def tearDown(self) -> None:
         Singleton._instances = {}
 
-    def test_client_is_a_singleton(self):
+    def test_client_is_a_singleton(self) -> None:
         with patch("snyk_metrics.client.logger") as logger:
             client_1 = MetricsClient()
             client_2 = MetricsClient()
         assert client_1 is client_2
         logger.warning.assert_called_once_with("MetricsClient already initialised.")
 
-    def test_metric_is_registered_correctly(self):
+    def test_metric_is_registered_correctly(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -36,7 +36,7 @@ class TestMetricsClient(TestCase):
         client.register_metric(metric)
         assert client.registry.get("test_counter") is not None
 
-    def test_metric_already_registered_raise(self):
+    def test_metric_already_registered_raise(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -49,24 +49,24 @@ class TestMetricsClient(TestCase):
             client.register_metric(metric)
         assert str(exc.value) == "test_metric"
 
-    def test_prometheus_client_is_created_correctly(self):
+    def test_prometheus_client_is_created_correctly(self) -> None:
         client = MetricsClient(prometheus_enabled=True)
         assert client._prometheus_client is not None
 
-    def test_dogstatsd_client_is_created_correctly(self):
+    def test_dogstatsd_client_is_created_correctly(self) -> None:
         client = MetricsClient(dogstatsd_enabled=True)
         assert client._dogstatsd_client is not None
 
-    def test_multiple_clients_are_created_correctly(self):
+    def test_multiple_clients_are_created_correctly(self) -> None:
         client = MetricsClient(prometheus_enabled=True, dogstatsd_enabled=True)
         assert len(client._enabled_clients) == 2
 
-    def test_pushgateway_is_enabled_correctly(self):
+    def test_pushgateway_is_enabled_correctly(self) -> None:
         client = MetricsClient(prometheus_enabled=True, pushgateway_enabled=True)
         assert client._prometheus_client is not None
         assert client._prometheus_client.pushgateway_enabled is True
 
-    def test_exceptions_are_silenced_and_logged_as_warning(self):
+    def test_exceptions_are_silenced_and_logged_as_warning(self) -> None:
         client = MetricsClient(raise_exceptions=False)
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -82,7 +82,7 @@ class TestMetricsClient(TestCase):
             "MetricAlreadyRegisteredError: test_metric", stack_info=True
         )
 
-    def test_registry_is_initialised_correctly(self):
+    def test_registry_is_initialised_correctly(self) -> None:
 
         metrics = [
             Metric(
@@ -105,7 +105,7 @@ class TestMetricsClient(TestCase):
         client = MetricsClient(metrics=metrics)
         assert len(client.registry) == 2
 
-    def test_metrics_cant_be_registered_if_registry_is_locked(self):
+    def test_metrics_cant_be_registered_if_registry_is_locked(self) -> None:
         metrics = [
             Metric(
                 metric_type=MetricTypes.COUNTER,
@@ -137,7 +137,7 @@ class TestMetricsClient(TestCase):
             )
         assert str(exc.value) == "metrics can't be registered after initialising the registry."
 
-    def test_not_registered_metric_raises_if_incremented(self):
+    def test_not_registered_metric_raises_if_incremented(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -150,7 +150,7 @@ class TestMetricsClient(TestCase):
 
         assert str(exc.value) == "test_metric"
 
-    def test_metrics_missmatch_raises(self):
+    def test_metrics_missmatch_raises(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.GAUGE,
@@ -164,7 +164,7 @@ class TestMetricsClient(TestCase):
 
         assert str(exc.value) == "test_metric type is gauge, not counter."
 
-    def test_counter_incremented_with_wrong_labels_raises(self):
+    def test_counter_incremented_with_wrong_labels_raises(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -178,7 +178,7 @@ class TestMetricsClient(TestCase):
 
         assert str(exc.value) == "test_metric required labels: ('foo',)"
 
-    def test_counter_with_labels_works(self):
+    def test_counter_with_labels_works(self) -> None:
         client = MetricsClient()
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -189,7 +189,7 @@ class TestMetricsClient(TestCase):
         client.register_metric(metric)
         assert client.increment_counter(metric, labels={"foo": "bar"}) is None
 
-    def test_counter_is_incremented_by_one_if_unspecified(self):
+    def test_counter_is_incremented_by_one_if_unspecified(self) -> None:
         # NOTE: to test the values we use Prometheus registry as the internal
         # registry only keeps track of the registered metrics, not their value.
         prometheus_registry = CollectorRegistry()
@@ -208,7 +208,7 @@ class TestMetricsClient(TestCase):
         # NOTE: `_total` is added automatically by Prometheus
         assert prometheus_registry.get_sample_value("test_metric_total") == 1
 
-    def test_counter_is_incremented_by_the_specified_amount(self):
+    def test_counter_is_incremented_by_the_specified_amount(self) -> None:
         # NOTE: to test the values we use Prometheus registry as the internal
         # registry only keeps track of the registered metrics, not their value.
         prometheus_registry = CollectorRegistry()
@@ -227,7 +227,7 @@ class TestMetricsClient(TestCase):
         # NOTE: `_total` is added automatically by Prometheus
         assert prometheus_registry.get_sample_value("test_metric_total") == 5
 
-    def test_counter_can_be_incremented_multiple_times(self):
+    def test_counter_can_be_incremented_multiple_times(self) -> None:
         # NOTE: to test the values we use Prometheus registry as the internal
         # registry only keeps track of the registered metrics, not their value.
         prometheus_registry = CollectorRegistry()
@@ -247,7 +247,7 @@ class TestMetricsClient(TestCase):
         # NOTE: `_total` is added automatically by Prometheus
         assert prometheus_registry.get_sample_value("test_metric_total") == 7
 
-    def test_registered_metrics_are_sent_to_pushgateway(self):
+    def test_registered_metrics_are_sent_to_pushgateway(self) -> None:
         prometheus_registry = CollectorRegistry()
         client = MetricsClient(
             prometheus_enabled=True,
@@ -268,7 +268,7 @@ class TestMetricsClient(TestCase):
 
         push_to_gateway.assert_called_once_with("localhost:9091", "pytest", prometheus_registry)
 
-    def test_counter_increment_is_sent_to_pushgateway(self):
+    def test_counter_increment_is_sent_to_pushgateway(self) -> None:
         prometheus_registry = CollectorRegistry()
         client = MetricsClient(
             prometheus_enabled=True,
@@ -293,7 +293,7 @@ class TestMetricsClient(TestCase):
 
         push_to_gateway.assert_called_once_with("localhost:9091", "pytest", prometheus_registry)
 
-    def test_dogstatsd_client_is_initialised_correctly(self):
+    def test_dogstatsd_client_is_initialised_correctly(self) -> None:
         with patch("snyk_metrics.clients.dogstatsd.initialize") as initialize:
             MetricsClient(
                 dogstatsd_enabled=True,
@@ -302,7 +302,7 @@ class TestMetricsClient(TestCase):
             )
         initialize.assert_called_once_with(statsd_host="localhost", statsd_port=1234)
 
-    def test_counter_is_incremented_in_dogstatsd(self):
+    def test_counter_is_incremented_in_dogstatsd(self) -> None:
         client = MetricsClient(dogstatsd_enabled=True)
         metric = Metric(
             metric_type=MetricTypes.COUNTER,
@@ -316,7 +316,7 @@ class TestMetricsClient(TestCase):
 
         statsd.increment.assert_called_once_with(metric="test_metric", tags=None, value=1)
 
-    def test_counter_with_labels_is_incremented_in_dogstatsd(self):
+    def test_counter_with_labels_is_incremented_in_dogstatsd(self) -> None:
         client = MetricsClient(dogstatsd_enabled=True)
         metric = Metric(
             metric_type=MetricTypes.COUNTER,

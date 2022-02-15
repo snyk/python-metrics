@@ -13,52 +13,53 @@ from snyk_metrics.metrics import Counter
 
 
 class TestCounter(TestCase):
-    def tearDown(self):
+    def tearDown(self) -> None:
         _destroy_client()
 
-    def test_initialise_must_be_called_first(self):
+    def test_initialise_must_be_called_first(self) -> None:
         counter = Counter("foo", "foo")
         with pytest.raises(ClientNotInitialisedError) as exc:
             counter.increment()
         assert str(exc.value) == "initialise() must be called before creating metrics"
 
-    def test_counter_name_must_be_unique(self):
+    def test_counter_name_must_be_unique(self) -> None:
         initialise(lock_registry=False)
         Counter("foo", "foo")
         with pytest.raises(MetricAlreadyRegisteredError) as exc:
             Counter("foo", "duplicate counter")
         assert str(exc.value) == "foo"
 
-    def test_counter_cant_be_registered_if_registry_is_locked(self):
+    def test_counter_cant_be_registered_if_registry_is_locked(self) -> None:
         initialise()
         with pytest.raises(RegistryLockedError) as exc:
             Counter("foo", "foo")
         assert str(exc.value) == "metrics can't be registered after initialising the registry."
 
-    def test_counter_is_incremented_by_one_by_default(self):
+    def test_counter_is_incremented_by_one_by_default(self) -> None:
         initialise(lock_registry=False)
         counter = Counter("foo", "foo", label_names=("label",))
         with patch.object(counter._client, "increment_counter", MagicMock()) as increment_counter:
             counter.increment()
         increment_counter.assert_called_once_with(counter, value=1, labels=None)
 
-    def test_counter_is_incremented_by_the_specified_amount(self):
+    def test_counter_is_incremented_by_the_specified_amount(self) -> None:
         initialise(lock_registry=False)
         counter = Counter("foo", "foo", label_names=("label",))
         with patch.object(counter._client, "increment_counter", MagicMock()) as increment_counter:
             counter.increment(5)
         increment_counter.assert_called_once_with(counter, value=5, labels=None)
 
-    def test_counter_with_labels_is_incremented(self):
+    def test_counter_with_labels_is_incremented(self) -> None:
         initialise(lock_registry=False)
         counter = Counter("foo", "foo", label_names=("label",))
         with patch.object(counter._client, "increment_counter", MagicMock()) as increment_counter:
             counter.increment(labels={"label": "test"})
         increment_counter.assert_called_once_with(counter, value=1, labels={"label": "test"})
 
-    def test_counter_is_registered_automatically(self):
+    def test_counter_is_registered_automatically(self) -> None:
         initialise(lock_registry=False)
         counter = Counter("foo", "foo", label_names=("label",))
         counter.increment(labels={"label": "test"})
+        assert counter._client is not None
         assert len(counter._client.registry) == 1
         assert counter is counter._client.registry.get("foo")
