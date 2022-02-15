@@ -293,6 +293,31 @@ class TestMetricsClient(TestCase):
 
         push_to_gateway.assert_called_once_with("localhost:9091", "pytest", prometheus_registry)
 
+    def test_authenticated_pushgateway_called_correctly(self) -> None:
+        prometheus_registry = CollectorRegistry()
+        client = MetricsClient(
+            prometheus_enabled=True,
+            pushgateway_enabled=True,
+            pushgateway_job_name="pytest",
+            pushgateway_host="localhost",
+            pushgateway_port=9091,
+            pushgateway_username="bar",
+            pushgateway_password="foo",
+            prometheus_registry=prometheus_registry,
+        )
+        metric = Metric(
+            metric_type=MetricTypes.COUNTER,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+
+        with patch("snyk_metrics.clients.prometheus.push_to_gateway") as push_to_gateway:
+            client.register_metric(metric)
+        push_to_gateway.assert_called_once()
+        _, kwargs = push_to_gateway.call_args
+        assert "handler" in kwargs
+
     def test_dogstatsd_client_is_initialised_correctly(self) -> None:
         with patch("snyk_metrics.clients.dogstatsd.initialize") as initialize:
             MetricsClient(
