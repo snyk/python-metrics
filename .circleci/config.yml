@@ -1,14 +1,14 @@
 ---
 version: 2.1
+orbs:
+  pre-commit: snyk/pre-commit@0.0.2
+
 parameters:
   poetry-version:
     type: string
     default: "1.1.13"
 
 executors:
-  linters:
-    docker:
-      - image: "python:3.10-alpine"
   python310:
     docker:
       - image: "cimg/python:3.10"
@@ -23,38 +23,6 @@ executors:
       - image: "cimg/python:3.7"
 
 jobs:
-  lint:
-    parameters:
-      executor_name:
-        type: executor
-    executor: << parameters.executor_name >>
-    steps:
-      - run:
-          name: Install requirements
-          command: |
-            apk update
-            apk add ruby=3.0.3-r0 go=1.17.4-r0 git=2.34.1-r0
-      - run:
-          name: Install pre-commit
-          command: pip install pre-commit==2.17.0
-      - checkout
-      - run:
-          name: Generate cache key
-          command: |
-            cp .pre-commit-config.yaml pre-commit-cache-key.txt
-            python --version --version >> pre-commit-cache-key.txt
-      - restore_cache:
-          key: pre-commit-hooks-{{ checksum "pre-commit-cache-key.txt" }}
-      - run:
-          name: Install hooks
-          command: pre-commit install --install-hooks
-      - save_cache:
-          paths:
-            - ~/.cache/pre-commit
-          key: pre-commit-hooks-{{ checksum "pre-commit-cache-key.txt" }}
-      - run:
-          name: Run linters
-          command: pre-commit run --all-files
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -98,10 +66,12 @@ workflows:
   version: 2
   test:
     jobs:
-      - lint:
+      - pre-commit/lint-all:
           name: Run Linters
-          executor_name: linters
-          context: snyk-security-rnd
+          context: snyk-docker-build
+          filters:
+            branches:
+              ignore: main
       - test:
           name: Run Tests - python 3.10
           executor_name: python310
