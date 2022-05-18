@@ -155,3 +155,11 @@ class MetricsClient(metaclass=Singleton):
         self._validate_metric(metric, MetricTypes.COUNTER, labels)
         for client in self._enabled_clients:
             client.increment_counter(metric.name, labels, value)
+
+    @_exception_handler
+    def set_gauge_value(
+        self, metric: Metric, labels: Optional[Dict[str, Any]] = None, value: float = 0.0
+    ) -> None:
+        self._validate_metric(metric, MetricTypes.GAUGE, labels)
+        for client in self._enabled_clients:
+            client.set_gauge_value(metric.name, labels, value)

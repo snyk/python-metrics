@@ -114,3 +114,15 @@ class PrometheusClient(BaseClient):
             self._push_to_gateway()
 
         return
+
+    def set_gauge_value(
+        self, name: str, labels: Optional[Dict[str, Any]] = None, value: float = 0.0
+    ) -> None:
+        label_names: Optional[Tuple[str, ...]] = tuple(labels.keys()) if labels else None
+        gauge = self._get_registered_metric("gauge", name, label_names)
+        gauge.labels(**labels).set(value) if labels else gauge.set(value)
+
+        if self.pushgateway_enabled:
+            self._push_to_gateway()
+
+        return
