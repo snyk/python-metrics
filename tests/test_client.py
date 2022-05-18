@@ -354,3 +354,118 @@ class TestMetricsClient(TestCase):
             client.increment_counter(metric, labels={"foo": "bar"})
 
         statsd.increment.assert_called_once_with(metric="test_metric", tags=["foo:bar"], value=1)
+
+    def test_not_registered_metric_raises_when_setting_a_gauge_value(self) -> None:
+        client = MetricsClient()
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+        with pytest.raises(MetricNotRegisteredError) as exc:
+            client.set_gauge_value(metric)
+
+        assert str(exc.value) == "test_metric"
+
+    def test_gauges_value_set_with_wrong_labels_raises(self) -> None:
+        client = MetricsClient()
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=("foo",),
+        )
+        client.register_metric(metric)
+        with pytest.raises(MetricLabelMismatchError) as exc:
+            client.set_gauge_value(metric)
+
+        assert str(exc.value) == "test_metric required labels: ('foo',)"
+
+    def test_gauge_with_labels_works(self) -> None:
+        client = MetricsClient()
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=("foo",),
+        )
+        client.register_metric(metric)
+        assert client.set_gauge_value(metric, labels={"foo": "bar"}, value=2.0) is None
+
+    def test_gauge_value_is_default_if_unspecified(self) -> None:
+        # NOTE: to test the values we use Prometheus registry as the internal
+        # registry only keeps track of the registered metrics, not their value.
+        prometheus_registry = CollectorRegistry()
+        client = MetricsClient(
+            prometheus_enabled=True,
+            prometheus_registry=prometheus_registry,
+        )
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+        client.register_metric(metric)
+        client.set_gauge_value(metric)
+        # NOTE: `_total` is added automatically by Prometheus
+        assert prometheus_registry.get_sample_value("test_metric") == 0.0
+
+    def test_gauge_set_value_works_properly(self) -> None:
+        # NOTE: to test the values we use Prometheus registry as the internal
+        # registry only keeps track of the registered metrics, not their value.
+        prometheus_registry = CollectorRegistry()
+        client = MetricsClient(
+            prometheus_enabled=True,
+            prometheus_registry=prometheus_registry,
+        )
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+        client.register_metric(metric)
+        client.set_gauge_value(metric, value=5.0)
+        # NOTE: `_total` is added automatically by Prometheus
+        assert prometheus_registry.get_sample_value("test_metric") == 5.0
+
+    def test_gauge_value_is_sent_to_pushgateway(self) -> None:
+        prometheus_registry = CollectorRegistry()
+        client = MetricsClient(
+            prometheus_enabled=True,
+            pushgateway_enabled=True,
+            pushgateway_job_name="pytest",
+            pushgateway_host="localhost",
+            pushgateway_port=9091,
+            prometheus_registry=prometheus_registry,
+        )
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+        # NOTE: only want to test the increment_counter call, register_metric is already tested.
+        with patch("snyk_metrics.clients.prometheus.push_to_gateway") as _:
+            client.register_metric(metric)
+
+        with patch("snyk_metrics.clients.prometheus.push_to_gateway") as push_to_gateway:
+            client.set_gauge_value(metric, value=15.0)
+
+        push_to_gateway.assert_called_once_with("localhost:9091", "pytest", prometheus_registry)
+
+    def test_gauge_value_is_set_in_dogstatsd(self) -> None:
+        client = MetricsClient(dogstatsd_enabled=True)
+        metric = Metric(
+            metric_type=MetricTypes.GAUGE,
+            name="test_metric",
+            documentation="Test",
+            label_names=None,
+        )
+        client.register_metric(metric)
+        with patch("snyk_metrics.clients.dogstatsd.statsd") as statsd:
+            client.set_gauge_value(metric, value=4.0)
+
+        statsd.gauge.assert_called_once_with(metric="test_metric", tags=None, value=4.0)

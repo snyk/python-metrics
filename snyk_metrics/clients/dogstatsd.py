@@ -15,6 +15,12 @@ class DogstatsdClient(BaseClient):
         tags = [f"{key}:{value}" for key, value in labels.items()] if labels else None
         statsd.increment(metric=name, tags=tags, value=value)
 
+    def set_gauge_value(
+        self, name: str, labels: Optional[Dict[str, str]] = None, value: float = 0.0
+    ) -> None:
+        tags = [f"{key}:{value}" for key, value in labels.items()] if labels else None
+        statsd.gauge(metric=name, tags=tags, value=value)
+
     def register_metric(
         self,
         metric_type: str,
