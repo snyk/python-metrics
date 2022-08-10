@@ -469,3 +469,18 @@ class TestMetricsClient(TestCase):
             client.set_gauge_value(metric, value=4.0)
 
         statsd.gauge.assert_called_once_with(metric="test_metric", tags=None, value=4.0)
+
+    def test_labels_recognized_even_if_specified_in_different_order(self) -> None:
+        client = MetricsClient()
+        metric = Metric(
+            metric_type=MetricTypes.COUNTER,
+            name="test_metric",
+            documentation="Test",
+            label_names=("label_a", "label_b"),
+        )
+        client.register_metric(metric)
+
+        try:
+            client.increment_counter(metric, labels={"label_b": "luca", "label_a": "mike"})
+        except MetricLabelMismatchError as exc:
+            raise pytest.fail(f"MetricsClient.increment_counter() raised {exc}")
