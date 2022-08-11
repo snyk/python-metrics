@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "snyk-metrics"
-version = "0.0.2"
+version = "0.0.3"
 description = "Python library to interact transparently with Prometheus, Pushgateway and Dogstatsd."
 authors = ["Snyk Security R&D <security-engineering@snyk.io>"]
 license = "Apache-2.0"

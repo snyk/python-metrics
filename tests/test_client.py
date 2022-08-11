@@ -469,3 +469,20 @@ class TestMetricsClient(TestCase):
             client.set_gauge_value(metric, value=4.0)
 
         statsd.gauge.assert_called_once_with(metric="test_metric", tags=None, value=4.0)
+
+    def test_labels_recognized_even_if_specified_in_different_order(self) -> None:
+        prometheus_registry = CollectorRegistry()
+        client = MetricsClient(
+            prometheus_enabled=True,
+            prometheus_registry=prometheus_registry,
+        )
+        metric = Metric(
+            metric_type=MetricTypes.COUNTER,
+            name="test_metric",
+            documentation="Test",
+            label_names=("label_a", "label_b"),
+        )
+        client.register_metric(metric)
+        labels = {"label_b": "luca", "label_a": "mike"}
+        client.increment_counter(metric, labels=labels)
+        assert prometheus_registry.get_sample_value("test_metric_total", labels=labels) == 1

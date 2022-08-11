@@ -123,7 +123,11 @@ class MetricsClient(metaclass=Singleton):
                 f"not {metric_type.value}."
             )
 
-        if registered_metric.label_names != label_names:
+        sorted_registered_label_names = sorted(
+            registered_metric.label_names if registered_metric.label_names else []
+        )
+        sorted_label_names = sorted(label_names if label_names else [])
+        if sorted_registered_label_names != sorted_label_names:
             raise MetricLabelMismatchError(
                 f"{registered_metric.name} required labels: {registered_metric.label_names}"
             )
