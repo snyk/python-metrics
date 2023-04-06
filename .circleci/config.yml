@@ -6,7 +6,7 @@ orbs:
 parameters:
   poetry-version:
     type: string
-    default: "1.1.13"
+    default: "1.4.0"
 
 executors:
   python310:

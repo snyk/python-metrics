@@ -79,7 +79,6 @@ class MetricsClient(metaclass=Singleton):
         raise_exceptions: bool = True,
         lock_registry: bool = False,
     ):
-
         self._raise_exceptions = raise_exceptions
         self._prometheus_client = (
             PrometheusClient(
@@ -167,3 +166,11 @@ class MetricsClient(metaclass=Singleton):
         self._validate_metric(metric, MetricTypes.GAUGE, labels)
         for client in self._enabled_clients:
             client.set_gauge_value(metric.name, labels, value)
+
+    @_exception_handler
+    def set_histogram_value(
+        self, metric: Metric, labels: Optional[Dict[str, Any]] = None, value: float = 0.0
+    ) -> None:
+        self._validate_metric(metric, MetricTypes.HISTOGRAM, labels)
+        for client in self._enabled_clients:
+            client.set_histogram_value(metric.name, labels, value)

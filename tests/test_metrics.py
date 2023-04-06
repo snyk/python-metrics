@@ -9,7 +9,7 @@ from snyk_metrics.exceptions import (
     MetricAlreadyRegisteredError,
     RegistryLockedError,
 )
-from snyk_metrics.metrics import Counter
+from snyk_metrics.metrics import Counter, Histogram
 
 
 class TestCounter(TestCase):
@@ -63,3 +63,17 @@ class TestCounter(TestCase):
         assert counter._client is not None
         assert len(counter._client.registry) == 1
         assert counter is counter._client.registry.get("foo")
+
+
+class TestHistogram:
+    def tearDown(self) -> None:
+        _destroy_client()
+
+    def test_histogram_value_is_set(self) -> None:
+        initialise(lock_registry=False)
+        histogram = Histogram("foo", "foo", label_names=("label",))
+        with patch.object(
+            histogram._client, "set_histogram_value", MagicMock()
+        ) as set_histogram_value:
+            histogram.set_value(10, labels={"label": "test"})
+        set_histogram_value.assert_called_once_with(histogram, value=10, labels={"label": "test"})
