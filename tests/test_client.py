@@ -83,7 +83,6 @@ class TestMetricsClient(TestCase):
         )
 
     def test_registry_is_initialised_correctly(self) -> None:
-
         metrics = [
             Metric(
                 metric_type=MetricTypes.COUNTER,

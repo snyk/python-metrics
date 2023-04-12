@@ -16,6 +16,12 @@ class BaseClient(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
+    def set_histogram_value(
+        self, name: str, labels: Optional[Dict[str, Any]] = None, value: float = 0.0
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def register_metric(
         self,
         metric_type: str,
