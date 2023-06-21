@@ -2,6 +2,7 @@
 version: 2.1
 orbs:
   pre-commit: snyk/pre-commit@0.0.2
+  prodsec: snyk/prodsec-orb@1.0
 
 parameters:
   poetry-version:
@@ -106,7 +107,11 @@ workflows:
           filters:
             branches:
               ignore: main
-
+      - prodsec/secrets-scan:
+          name: Scan repository for secrets
+          context:
+            - snyk-bot-slack
+          channel: sec-eng-deployments
   release:
     jobs:
       - build_and_release:
