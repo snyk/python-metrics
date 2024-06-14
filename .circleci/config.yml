@@ -7,7 +7,7 @@ orbs:
 parameters:
   poetry-version:
     type: string
-    default: "1.8.4"
+    default: "1.8.3"
 
 executors:
   python310:
@@ -37,8 +37,7 @@ jobs:
       - run:
           name: Install Poetry
           command: >
-            curl -sSL https://install.python-poetry.org
-            | POETRY_VERSION=<<pipeline.parameters.poetry-version>> python3 -
+            pipx install poetry==<<pipeline.parameters.poetry-version>>
       - run:
           name: Install dependencies and project in dev mode
           command: poetry install
@@ -56,8 +55,7 @@ jobs:
       - run:
           name: Install Poetry
           command: >
-            curl -sSL https://install.python-poetry.org
-            | POETRY_VERSION=<<pipeline.parameters.poetry-version>> python3 -
+            pipx install poetry==<<pipeline.parameters.poetry-version>>
       - run:
           name: Configure Poetry PyPi token
           command: |
