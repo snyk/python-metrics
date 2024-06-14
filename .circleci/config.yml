@@ -7,9 +7,7 @@ orbs:
 parameters:
   poetry-version:
     type: string
-    # pinned due to poetry issues on circleci
-    # https://github.com/python-poetry/poetry/issues/7184#
-    default: "1.2.2"
+    default: "1.8.4"
 
 executors:
   python310:
