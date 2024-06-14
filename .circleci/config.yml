@@ -1,7 +1,7 @@
 ---
 version: 2.1
 orbs:
-  pre-commit: snyk/pre-commit@0.0.2
+  pre-commit: snyk/pre-commit@0.2.1
   prodsec: snyk/prodsec-orb@1.0
 
 parameters:
