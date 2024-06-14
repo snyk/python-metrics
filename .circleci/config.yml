@@ -1,17 +1,21 @@
 ---
 version: 2.1
 orbs:
-  pre-commit: snyk/pre-commit@0.0.2
+  pre-commit: snyk/pre-commit@0.2.1
   prodsec: snyk/prodsec-orb@1.0
 
 parameters:
   poetry-version:
     type: string
-    # pinned due to poetry issues on circleci
-    # https://github.com/python-poetry/poetry/issues/7184#
-    default: "1.2.2"
+    default: "1.8.3"
 
 executors:
+  python312:
+    docker:
+      - image: "cimg/python:3.12"
+  python311:
+    docker:
+      - image: "cimg/python:3.11"
   python310:
     docker:
       - image: "cimg/python:3.10"
@@ -21,9 +25,6 @@ executors:
   python38:
     docker:
       - image: "cimg/python:3.8"
-  python37:
-    docker:
-      - image: "cimg/python:3.7"
 
 jobs:
   test:
@@ -39,8 +40,7 @@ jobs:
       - run:
           name: Install Poetry
           command: >
-            curl -sSL https://install.python-poetry.org
-            | POETRY_VERSION=<<pipeline.parameters.poetry-version>> python3 -
+            pipx install poetry==<<pipeline.parameters.poetry-version>>
       - run:
           name: Install dependencies and project in dev mode
           command: poetry install
@@ -58,8 +58,7 @@ jobs:
       - run:
           name: Install Poetry
           command: >
-            curl -sSL https://install.python-poetry.org
-            | POETRY_VERSION=<<pipeline.parameters.poetry-version>> python3 -
+            pipx install poetry==<<pipeline.parameters.poetry-version>>
       - run:
           name: Configure Poetry PyPi token
           command: |
@@ -80,6 +79,20 @@ workflows:
             branches:
               ignore: main
       - test:
+          name: Run Tests - python 3.12
+          executor_name: python312
+          context: snyk-security-rnd
+          filters:
+            branches:
+              ignore: main
+      - test:
+          name: Run Tests - python 3.11
+          executor_name: python311
+          context: snyk-security-rnd
+          filters:
+            branches:
+              ignore: main
+      - test:
           name: Run Tests - python 3.10
           executor_name: python310
           context: snyk-security-rnd
@@ -96,13 +109,6 @@ workflows:
       - test:
           name: Run Tests - python 3.8
           executor_name: python38
-          context: snyk-security-rnd
-          filters:
-            branches:
-              ignore: main
-      - test:
-          name: Run Tests - python 3.7
-          executor_name: python37
           context: snyk-security-rnd
           filters:
             branches:
