@@ -10,6 +10,12 @@ parameters:
     default: "1.8.3"
 
 executors:
+  python312:
+    docker:
+      - image: "cimg/python:3.12"
+  python311:
+    docker:
+      - image: "cimg/python:3.11"
   python310:
     docker:
       - image: "cimg/python:3.10"
@@ -69,6 +75,20 @@ workflows:
       - pre-commit/lint-all:
           name: Run Linters
           context: snyk-docker-build
+          filters:
+            branches:
+              ignore: main
+      - test:
+          name: Run Tests - python 3.12
+          executor_name: python312
+          context: snyk-security-rnd
+          filters:
+            branches:
+              ignore: main
+      - test:
+          name: Run Tests - python 3.11
+          executor_name: python311
+          context: snyk-security-rnd
           filters:
             branches:
               ignore: main
