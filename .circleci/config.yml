@@ -2,7 +2,7 @@
 version: 2.1
 orbs:
   pre-commit: snyk/pre-commit@0.2.1
-  prodsec: snyk/prodsec-orb@1.0
+  prodsec: snyk/prodsec-orb@1
 
 parameters:
   poetry-version:
@@ -27,6 +27,16 @@ executors:
       - image: "cimg/python:3.8"
 
 jobs:
+  security-scans:
+    parameters:
+      executor_name:
+        type: executor
+    executor: << parameters.executor_name >>
+    steps:
+      - checkout:
+          path: ~/project
+      - prodsec/security_scans:
+          mode: auto
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -117,7 +127,7 @@ workflows:
           name: Scan repository for secrets
           context:
             - snyk-bot-slack
-          channel: sec-eng-deployments
+          channel: sec-eng-deployments 
   release:
     jobs:
       - build_and_release:
