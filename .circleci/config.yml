@@ -106,6 +106,8 @@ workflows:
           name: Run Tests - python 3.10
           executor_name: python310
           context: snyk-security-rnd
+          steps:
+            - security-scans
           filters:
             branches:
               ignore: main
