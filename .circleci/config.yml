@@ -88,6 +88,10 @@ workflows:
           filters:
             branches:
               ignore: main
+      - security-scans:
+          name: Snyk Security Scans python312
+          executor_name: python312
+          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.12
           executor_name: python312
@@ -106,8 +110,6 @@ workflows:
           name: Run Tests - python 3.10
           executor_name: python310
           context: snyk-security-rnd
-          steps:
-            - security-scans
           filters:
             branches:
               ignore: main
