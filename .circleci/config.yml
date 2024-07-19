@@ -46,7 +46,6 @@ jobs:
           command: poetry install
       - prodsec/security_scans:
           mode: auto
-
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -67,7 +66,6 @@ jobs:
       - run:
           name: Run tests
           command: poetry run pytest
-
   build_and_release:
     description: Build and release new version of the package to PyPi
     executor: python310
