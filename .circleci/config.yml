@@ -2,7 +2,8 @@
 version: 2.1
 orbs:
   pre-commit: snyk/pre-commit@0.2.1
-  prodsec: snyk/prodsec-orb@1
+  prodsec: snyk/prodsec-orb@1.0
+  snyk: snyk/snyk@1.0.0
 
 parameters:
   poetry-version:
@@ -27,16 +28,6 @@ executors:
       - image: "cimg/python:3.8"
 
 jobs:
-  security-scans:
-    parameters:
-      executor_name:
-        type: executor
-    executor: << parameters.executor_name >>
-    steps:
-      - checkout:
-          path: ~/project
-      - prodsec/security_scans:
-          mode: auto
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -78,6 +69,36 @@ jobs:
           command: |
             poetry publish --build --no-interaction
 
+  security-scans:
+    parameters:
+      executor_name:
+        type: executor
+    executor: << parameters.executor_name >>
+    steps:
+      - checkout:
+          path: ~/project
+      - snyk/scan:
+          fail-on-issues: true
+          severity-threshold: high
+          monitor-on-build: false
+          additional-arguments: "--all-projects"
+      - snyk/scan:
+          command: code test
+          fail-on-issues: true
+          severity-threshold: high
+          monitor-on-build: false
+      - snyk/scan:
+          command: iac test
+          fail-on-issues: true
+          severity-threshold: high
+          monitor-on-build: false
+      - snyk/scan:
+          command: container test
+          additional-arguments: --policy-path=.snyk
+          fail-on-issues: true
+          severity-threshold: high
+          monitor-on-build: false
+
 workflows:
   version: 2
   PRs:
@@ -88,10 +109,6 @@ workflows:
           filters:
             branches:
               ignore: main
-      - security-scans:
-          name: Snyk Security Scans python312
-          executor_name: python312
-          context: snyk-security-rnd
       - test:
           name: Run Tests - python 3.12
           executor_name: python312
@@ -132,6 +149,11 @@ workflows:
           context:
             - snyk-bot-slack
           channel: sec-eng-deployments
+      - security-scans:
+          name: Snyk Security Scans
+          executor_name: python310
+          context: snyk-security-rnd
+
   release:
     jobs:
       - build_and_release:
