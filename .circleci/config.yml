@@ -2,13 +2,17 @@
 version: 2.1
 orbs:
   pre-commit: snyk/pre-commit@0.2.1
-  prodsec: snyk/prodsec-orb@1.0
-  snyk: snyk/snyk@1.0.0
+  prodsec: snyk/prodsec-orb@1
 
 parameters:
   poetry-version:
     type: string
     default: "1.8.3"
+
+defaults_python: &defaults_python
+  resource_class: small
+  docker:
+    - image: cimg/python:3.12.1
 
 executors:
   python312:
@@ -28,6 +32,21 @@ executors:
       - image: "cimg/python:3.8"
 
 jobs:
+  security-scans:
+    <<: *defaults_python
+    steps:
+      - checkout:
+          path: ~/project
+      - run:
+          name: Install Poetry
+          command: >
+            pipx install poetry==<<pipeline.parameters.poetry-version>> 
+      - run:
+          name: Install dependencies and project in dev mode
+          command: poetry install
+      - prodsec/security_scans:
+          mode: auto
+
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -68,36 +87,6 @@ jobs:
           name: Release and Publish to PyPI
           command: |
             poetry publish --build --no-interaction
-
-  security-scans:
-    parameters:
-      executor_name:
-        type: executor
-    executor: << parameters.executor_name >>
-    steps:
-      - checkout:
-          path: ~/project
-      - snyk/scan:
-          fail-on-issues: true
-          severity-threshold: high
-          monitor-on-build: false
-          additional-arguments: "--all-projects"
-      - snyk/scan:
-          command: code test
-          fail-on-issues: true
-          severity-threshold: high
-          monitor-on-build: false
-      - snyk/scan:
-          command: iac test
-          fail-on-issues: true
-          severity-threshold: high
-          monitor-on-build: false
-      - snyk/scan:
-          command: container test
-          additional-arguments: --policy-path=.snyk
-          fail-on-issues: true
-          severity-threshold: high
-          monitor-on-build: false
 
 workflows:
   version: 2
@@ -150,10 +139,10 @@ workflows:
             - snyk-bot-slack
           channel: sec-eng-deployments
       - security-scans:
-          name: Snyk Security Scans
-          executor_name: python310
-          context: snyk-security-rnd
-
+          name: Security Scans
+          context:
+            - analysis_security_intelligence
+            - snyk-security-rnd
   release:
     jobs:
       - build_and_release:
