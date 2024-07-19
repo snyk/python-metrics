@@ -44,8 +44,12 @@ jobs:
       - run:
           name: Install dependencies and project in dev mode
           command: poetry install
+      - run:
+          name: Run pip install
+          command: pip install -r requirements.txt
       - prodsec/security_scans:
           mode: auto
+          iac-scan: disabled
   test:
     description: Run Tests for a specific python version
     parameters:
@@ -90,6 +94,20 @@ workflows:
   version: 2
   PRs:
     jobs:
+      - prodsec/secrets-scan:
+          name: Scan repository for secrets
+          context:
+            - snyk-bot-slack
+          channel: sec-eng-deployments
+          filters:
+            branches:
+              ignore:
+                - main
+      - security-scans:
+          name: Security Scans
+          context:
+            - analysis_security_intelligence
+            - snyk-security-rnd
       - pre-commit/lint-all:
           name: Run Linters
           context: snyk-docker-build
@@ -131,16 +149,7 @@ workflows:
           filters:
             branches:
               ignore: main
-      - prodsec/secrets-scan:
-          name: Scan repository for secrets
-          context:
-            - snyk-bot-slack
-          channel: sec-eng-deployments
-      - security-scans:
-          name: Security Scans
-          context:
-            - analysis_security_intelligence
-            - snyk-security-rnd
+
   release:
     jobs:
       - build_and_release:
