@@ -107,7 +107,6 @@ workflows:
           name: Security Scans
           context:
             - analysis_security_intelligence
-            - snyk-security-rnd
       - pre-commit/lint-all:
           name: Run Linters
           context: snyk-docker-build
